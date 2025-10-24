@@ -1,36 +1,108 @@
 <span id="level">0</span>
 
-<script type="module" is:inline>
-    
-    const levelSpan = document.getElementById('level')
-    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+<script>
+    import confetti from 'canvas-confetti'
 
-    const audioContext = new AudioContext()
-    const source = audioContext.createMediaStreamSource(audioStream)
-    const analyser = audioContext.createAnalyser()
+    async function initMicMeter() {
+        const levelSpan = document.getElementById('level')
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
-    analyser.fftSize = 256
-    source.connect(analyser)
+        const audioContext = new AudioContext()
+        const source = audioContext.createMediaStreamSource(audioStream)
+        const analyser = audioContext.createAnalyser()
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount)
+        analyser.fftSize = 256
+        source.connect(analyser)
 
-    function updateLevelSpan() {
-        analyser.getByteFrequencyData(dataArray)
+        const dataArray = new Uint8Array(analyser.frequencyBinCount)
 
-        let sum = 0
-        for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i]
+        let confettiActive = false
+        let confettiEnd = 0
+
+        function triggerConfetti() {
+            if (confettiActive) return
+
+            confettiActive = true
+            const duration = 8000
+            confettiEnd = Date.now() + duration
+
+            const colors = ['#ff3b30', '#ff9500', '#ffcc00', '#4cd964', '#5ac8fa', '#007aff', '#5856d6']
+
+            function frame() {
+                const particleCount = 3
+
+                for (let i = 0; i < particleCount; i++) {
+                    confetti({
+                        particleCount: 1,
+                        startVelocity: 30,
+                        spread: 360,
+                        ticks: 200,
+                        origin: {
+                            x: Math.random(),
+                            y: -0.1 // starts from the top
+                        },
+                        colors: [colors[Math.floor(Math.random() * colors.length)]],
+                        gravity: 0.8,
+                        scalar: 0.8,
+                        drift: Math.random() * 0.5 - 0.25,
+                        shapes: ['square']
+                    })
+                }
+
+                if (Date.now() < confettiEnd) {
+                    requestAnimationFrame(frame)
+                } else {
+                    confettiActive = false
+                }
+            }
+
+            frame()
         }
 
-        const avarage = Math.round(sum / dataArray.length)
-        const normalized = Math.round(avarage / 255 * 100)
+        let micStopped = false;
 
-        levelSpan.textContent = normalized
-        requestAnimationFrame(updateLevelSpan)
+        function updateLevelSpan() {
+            if (micStopped) return;
 
-        //console.log(normalized)
+            analyser.getByteFrequencyData(dataArray)
+
+            let sum = 0
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i]
+            }
+
+            const avarage = Math.round(sum / dataArray.length)
+            const normalized = Math.round(avarage / 255 * 100)
+
+            levelSpan.textContent = normalized
+
+            // update cake animation based on mic
+            if (window.setCakeAnimation) {
+                window.setCakeAnimation(normalized)
+            }
+
+            if (normalized >= 30) {
+                triggerConfetti()
+            }
+
+            requestAnimationFrame(updateLevelSpan)
+        }
+
+        window.onCandleBlownOut = () => {
+            micStopped = true;
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop())
+            }
+
+            setTimeout(() => {
+                if (window.showImagePopup) {
+                    window.showImagePopup();
+                }
+            }, 3250);
+        };
+
+        updateLevelSpan()
     }
 
-    updateLevelSpan()
-
+    initMicMeter()
 </script>

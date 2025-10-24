@@ -3,26 +3,79 @@ import AnimationPlayer from './AnimationPlayer.astro'
 import idle01 from '../assets/cake_idle/idle_01.png'
 import idle02 from '../assets/cake_idle/idle_02.png'
 import idle03 from '../assets/cake_idle/idle_03.png'
+
+import flame100 from '../assets/cake_dying_flame/100.png'
+import flame80 from '../assets/cake_dying_flame/80.png'
+import flame60 from '../assets/cake_dying_flame/60.png'
+import flame40 from '../assets/cake_dying_flame/40.png'
+import flame20 from '../assets/cake_dying_flame/20.png'
 ---
 
 <button id="cake-button" type="button">
-  <AnimationPlayer
-    frames={[idle01, idle02, idle03]}
-    fps={3}
-    scale={4}
-  />
+  <div id="cake-container">
+    <div id="idle-animation">
+      <AnimationPlayer
+        frames={[idle01, idle02, idle03]}
+        fps={3}
+        scale={4}
+      />
+    </div>
+    <div id="dying-animation" style="display: none;">
+      <AnimationPlayer
+        frames={[flame100, flame80, flame60, flame40, flame20]}
+        fps={1}
+        scale={4}
+      />
+    </div>
+  </div>
 </button>
-
 
 <audio id="music-player" src="/music/happy-bday.mp3"></audio>
 
 <script>
   const cakeButton = document.getElementById('cake-button');
   const musicPlayer = document.getElementById('music-player');
+  const idleAnimation = document.getElementById('idle-animation');
+  const dyingAnimation = document.getElementById('dying-animation');
 
   cakeButton?.addEventListener('click', () => {
     musicPlayer.play();
   });
+
+  let candleBlownOut = false;
+
+  window.setCakeAnimation = (micLevel) => {
+    if (candleBlownOut) return;
+
+    const dyingContainer = dyingAnimation?.querySelector('.animation-container');
+    const dyingPlayer = dyingContainer?.animationPlayer;
+
+    if (!dyingPlayer) return;
+
+    if (micLevel < 5) {
+      idleAnimation.style.display = 'block';
+      dyingAnimation.style.display = 'none';
+    } else {
+      idleAnimation.style.display = 'none';
+      dyingAnimation.style.display = 'block';
+
+      if (micLevel >= 30) {
+        dyingPlayer.setFrame(4);
+        candleBlownOut = true;
+        if (window.onCandleBlownOut) {
+          window.onCandleBlownOut();
+        }
+      } else if (micLevel >= 22) {
+        dyingPlayer.setFrame(3); // 40%
+      } else if (micLevel >= 15) {
+        dyingPlayer.setFrame(2); // 60%
+      } else if (micLevel >= 8) {
+        dyingPlayer.setFrame(1); // 80%
+      } else {
+        dyingPlayer.setFrame(0); // 100%
+      }
+    }
+  };
 </script>
 
 <style>
@@ -31,5 +84,14 @@ import idle03 from '../assets/cake_idle/idle_03.png'
     border: none;
     padding: 0;
     cursor: pointer;
+  }
+
+  #cake-container {
+    position: relative;
+  }
+
+  #idle-animation,
+  #dying-animation {
+    position: relative;
   }
 </style>
