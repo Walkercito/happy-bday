@@ -1,0 +1,35 @@
+---
+import AnimationPlayer from './AnimationPlayer.astro'
+import idle01 from '../assets/cake_idle/idle_01.png'
+import idle02 from '../assets/cake_idle/idle_02.png'
+import idle03 from '../assets/cake_idle/idle_03.png'
+---
+
+<button id="cake-button" type="button">
+  <AnimationPlayer
+    frames={[idle01, idle02, idle03]}
+    fps={3}
+    scale={4}
+  />
+</button>
+
+
+<audio id="music-player" src="/music/happy-bday.mp3"></audio>
+
+<script>
+  const cakeButton = document.getElementById('cake-button');
+  const musicPlayer = document.getElementById('music-player');
+
+  cakeButton?.addEventListener('click', () => {
+    musicPlayer.play();
+  });
+</script>
+
+<style>
+  #cake-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+</style>

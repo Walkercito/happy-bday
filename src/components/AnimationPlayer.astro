@@ -1,0 +1,132 @@
+---
+import { getImage } from 'astro:assets'
+
+interface Props {
+    frames: any[]  // ImageMetadata[]
+    fps?: number
+    scale?: number
+    class?: string
+    onClick?: () => void
+}
+
+const { frames, fps = 8, scale = 1, class: className } = Astro.props;
+const uniqueId = `animation-${Math.random().toString(36).substr(2, 9)}`;
+
+const processedFrames = await Promise.all(
+    frames.map(frame => getImage({ src: frame }))
+);
+const frameSrcs = processedFrames.map(f => f.src);
+
+// get dimentions of the first image
+const firstFrame = frames[0];
+const frameWidth = firstFrame.width;
+const frameHeight = firstFrame.height;
+---
+
+<div class={`animation-container ${className || ''}`} data-frames={JSON.stringify(frameSrcs)} data-fps={fps} data-scale={scale} data-width={frameWidth} data-height={frameHeight} id={uniqueId}>
+    <img class="animation-frame" alt="animation frame" draggable="false" />
+</div>
+
+<script>
+    class AnimationPlayer {
+        constructor(container) {
+            this.container = container
+            this.img = container.querySelector('.animation-frame')
+            this.frames = JSON.parse(container.dataset.frames)
+            this.fps = parseInt(container.dataset.fps) || 8
+            this.scale = parseInt(container.dataset.scale) || 1
+            this.width = parseInt(container.dataset.width) || 0
+            this.height = parseInt(container.dataset.height) || 0
+
+            this.currentFrame = 0
+            this.lastTime = performance.now()
+            this.accumulator = 0
+            this.rafId = null
+            this.loadedImages = []
+
+            this.preloadImages().then(() => this.start())
+        }
+
+        async preloadImages() {
+            const promises = this.frames.map(src => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image()
+                    img.onload = () => resolve(img)
+                    img.onerror = reject
+                    img.src = src
+                })
+            })
+            this.loadedImages = await Promise.all(promises)
+
+            // set the initial frame
+            if (this.loadedImages.length > 0) {
+                this.img.src = this.frames[0]
+                this.img.style.width = `${this.width * this.scale}px`
+                this.img.style.height = `${this.height * this.scale}px`
+            }
+        }
+
+        start() {
+            if (this.frames.length <= 1) return // no need to animate a single frame
+
+            const frameDuration = 1000 / this.fps
+
+            const loop = (time) => {
+                const dt = time - this.lastTime
+                this.lastTime = time
+                this.accumulator += dt
+
+                while (this.accumulator >= frameDuration) {
+                    this.currentFrame = (this.currentFrame + 1) % this.frames.length
+                    this.img.src = this.frames[this.currentFrame]
+                    this.accumulator -= frameDuration
+                }
+
+                this.rafId = requestAnimationFrame(loop)
+            }
+
+            this.rafId = requestAnimationFrame(loop)
+        }
+
+        stop() {
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId)
+                this.rafId = null
+            }
+        }
+
+        setFrame(index) {
+            if (index < 0 || index >= this.frames.length) return
+            this.stop()
+            this.currentFrame = index
+            this.img.src = this.frames[index]
+        }
+
+        resume() {
+            if (!this.rafId) {
+                this.lastTime = performance.now()
+                this.accumulator = 0
+                this.start()
+            }
+        }
+    }
+
+    // auto-start
+    document.querySelectorAll('.animation-container').forEach(el => {
+        const player = new AnimationPlayer(el)
+        el.animationPlayer = player
+    })
+</script>
+
+<style>
+    .animation-frame {
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+        display: block;
+    }
+
+    .animation-container {
+        display: inline-block;
+    }
+</style>

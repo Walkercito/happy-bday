@@ -1,0 +1,36 @@
+<span id="level">0</span>
+
+<script type="module" is:inline>
+    
+    const levelSpan = document.getElementById('level')
+    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+    const audioContext = new AudioContext()
+    const source = audioContext.createMediaStreamSource(audioStream)
+    const analyser = audioContext.createAnalyser()
+
+    analyser.fftSize = 256
+    source.connect(analyser)
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount)
+
+    function updateLevelSpan() {
+        analyser.getByteFrequencyData(dataArray)
+
+        let sum = 0
+        for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i]
+        }
+
+        const avarage = Math.round(sum / dataArray.length)
+        const normalized = Math.round(avarage / 255 * 100)
+
+        levelSpan.textContent = normalized
+        requestAnimationFrame(updateLevelSpan)
+
+        //console.log(normalized)
+    }
+
+    updateLevelSpan()
+
+</script>
