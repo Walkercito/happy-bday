@@ -1,5 +1,9 @@
 ---
 import yiipeVideo from '../assets/yiipe.mp4';
+import AnimationPlayer from './AnimationPlayer.astro'
+import idle01 from '../assets/cake_idle/idle_01.png'
+import idle02 from '../assets/cake_idle/idle_02.png'
+import idle03 from '../assets/cake_idle/idle_03.png'
 ---
 
 <div id="image-popup-overlay" class="hidden fixed inset-0 bg-black/65 flex items-center justify-center z-50">
@@ -14,10 +18,19 @@ import yiipeVideo from '../assets/yiipe.mp4';
   </div>
 </div>
 
+<div id="final-screen" class="hidden fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black flex items-center justify-center z-[60]">
+  <AnimationPlayer
+    frames={[idle01, idle02, idle03]}
+    fps={3}
+    scale={4}
+  />
+</div>
+
 <script>
   const overlay = document.getElementById('image-popup-overlay');
   const card = document.getElementById('image-popup-card');
   const video = document.getElementById('celebration-video') as HTMLVideoElement;
+  const finalScreen = document.getElementById('final-screen');
 
   window.showImagePopup = () => {
     if (!overlay || !card || !video) return;
@@ -32,6 +45,22 @@ import yiipeVideo from '../assets/yiipe.mp4';
         musicPlayer.pause();
       }
     }, 1000);
+
+    // Fade out 30ms después de que el video termine
+    video.addEventListener('ended', () => {
+      setTimeout(() => {
+        if (finalScreen) {
+          finalScreen.classList.remove('hidden');
+          finalScreen.style.opacity = '0';
+          finalScreen.style.transition = 'opacity 1s ease-in-out';
+
+          // Trigger fade in
+          setTimeout(() => {
+            finalScreen.style.opacity = '1';
+          }, 10);
+        }
+      }, 30);
+    }, { once: true });
   };
 
   overlay?.addEventListener('click', () => {
