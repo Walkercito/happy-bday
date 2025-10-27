@@ -1,41 +1,46 @@
 ---
-interface Props {
-  imageSrc?: string;
-}
-
-const { imageSrc } = Astro.props;
+import yiipeVideo from '../assets/yiipe.mp4';
 ---
 
 <div id="image-popup-overlay" class="hidden fixed inset-0 bg-black/65 flex items-center justify-center z-50">
-  <div id="image-popup-card" class="bg-transparent rounded-xl p-2 inline-flex items-center justify-center">
-    {imageSrc ? (
-      <img
-        src={imageSrc}
-        alt="Celebration"
-        class="max-w-[80vw] max-h-[80vh] rounded-lg shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
-      />
-    ) : (
-      <div class="text-white text-xl p-6">
-        🎉 ¡Felicidades! 🎉
-      </div>
-    )}
+  <div id="image-popup-card" class="bg-gray-900 rounded-xl p-4 inline-flex items-center justify-center border-2 border-gray-700 shadow-[0_10px_40px_rgba(0,0,0,0.8)]">
+    <video
+      id="celebration-video"
+      src={yiipeVideo}
+      class="max-w-[80vw] max-h-[80vh] rounded-lg"
+      playsinline
+      preload="auto"
+    />
   </div>
 </div>
 
 <script>
   const overlay = document.getElementById('image-popup-overlay');
   const card = document.getElementById('image-popup-card');
+  const video = document.getElementById('celebration-video') as HTMLVideoElement;
 
   window.showImagePopup = () => {
-    if (!overlay || !card) return;
+    if (!overlay || !card || !video) return;
 
     overlay.classList.remove('hidden');
     card.classList.add('animate-tada');
+    video.play();
+
+    setTimeout(() => {
+      const musicPlayer = document.getElementById('music-player') as HTMLAudioElement;
+      if (musicPlayer) {
+        musicPlayer.pause();
+      }
+    }, 1000);
   };
 
   overlay?.addEventListener('click', () => {
     overlay.classList.add('hidden');
     card?.classList.remove('animate-tada');
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
   });
 
   card?.addEventListener('click', (e) => {
