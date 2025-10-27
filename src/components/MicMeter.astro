@@ -1,10 +1,7 @@
-<span id="level">0</span>
-
 <script>
     import confetti from 'canvas-confetti'
 
     async function initMicMeter() {
-        const levelSpan = document.getElementById('level')
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
         const audioContext = new AudioContext()
@@ -74,14 +71,12 @@
             const avarage = Math.round(sum / dataArray.length)
             const normalized = Math.round(avarage / 255 * 100)
 
-            levelSpan.textContent = normalized
-
             // update cake animation based on mic
             if (window.setCakeAnimation) {
                 window.setCakeAnimation(normalized)
             }
 
-            if (normalized >= 25) {
+            if (normalized >= 30) {
                 triggerConfetti()
             }
 
